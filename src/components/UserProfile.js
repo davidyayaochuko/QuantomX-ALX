@@ -2,7 +2,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 
-
 const UserProfile = ({ onClose }) => {
     // Sample user data - this would come from your auth system/backend
     const user = {
@@ -30,7 +29,7 @@ const UserProfile = ({ onClose }) => {
     };
 
     return (
-        <div className="fixed inset-y-0 right-0 w-80 bg-white shadow-lg z-40 transition-transform transform">
+        <div className="fixed inset-y-0 right-0 w-80 bg-white shadow-lg z-40 flex flex-col h-full">
             {/* Close button */}
             <button
                 onClick={onClose}
@@ -41,75 +40,77 @@ const UserProfile = ({ onClose }) => {
                 </svg>
             </button>
 
-            {/* User profile section */}
-            <div className="flex flex-col items-center p-6 border-b border-gray-200">
-                <div className="relative">
-                    <img
-                        src={user.profileImage}
-                        alt={user.name}
-                        className="w-24 h-24 rounded-full object-cover border-2 border-blue-500"
-                    />
-                    <div className="absolute bottom-0 right-0 bg-green-500 w-4 h-4 rounded-full border-2 border-white"></div>
+            {/* Scrollable content area */}
+            <div className="flex-1 overflow-y-auto">
+                {/* User profile section */}
+                <div className="flex flex-col items-center p-6 border-b border-gray-200">
+                    <div className="relative">
+                        <img
+                            src={user.profileImage}
+                            alt={user.name}
+                            className="w-24 h-24 rounded-full object-cover border-2 border-blue-500"
+                        />
+                        <div className="absolute bottom-0 right-0 bg-green-500 w-4 h-4 rounded-full border-2 border-white"></div>
+                    </div>
+                    <h2 className="mt-4 text-xl font-bold text-gray-900">{user.name}</h2>
+                    <p className="text-gray-600">{user.position}</p>
+                    <p className="text-sm text-gray-500">{user.department}</p>
                 </div>
-                <h2 className="mt-4 text-xl font-bold text-gray-900">{user.name}</h2>
-                <p className="text-gray-600">{user.position}</p>
-                <p className="text-sm text-gray-500">{user.department}</p>
-            </div>
 
-            {/* User details section */}
-            <div className="p-6 border-b border-gray-200">
-                <h3 className="text-lg font-semibold mb-4">Account Details</h3>
+                {/* User details section */}
+                <div className="p-6 border-b border-gray-200">
+                    <h3 className="text-lg font-semibold mb-4">Account Details</h3>
 
-                <div className="space-y-3">
-                    <div>
-                        <p className="text-sm text-gray-500">Email</p>
-                        <p className="text-gray-700">{user.email}</p>
-                    </div>
-
-                    <div>
-                        <p className="text-sm text-gray-500">Member since</p>
-                        <p className="text-gray-700">{formatDate(user.joinDate)}</p>
-                    </div>
-
-                    <div>
-                        <p className="text-sm text-gray-500">Employee ID</p>
-                        <p className="text-gray-700">{user.id}</p>
-                    </div>
-                </div>
-            </div>
-
-            {/* Recent bookings section */}
-            <div className="p-6">
-                <h3 className="text-lg font-semibold mb-4">Recent Bookings</h3>
-
-                <div className="space-y-3">
-                    {user.recentBookings.map(booking => (
-                        <div key={booking.id} className="bg-gray-50 p-3 rounded-md">
-                            <div className="flex justify-between">
-                                <span className="font-medium">Seat #{booking.seatId}</span>
-                                <span className="text-sm text-blue-600">{booking.time}</span>
-                            </div>
-                            <p className="text-sm text-gray-600">{formatDate(booking.date)}</p>
+                    <div className="space-y-3">
+                        <div>
+                            <p className="text-sm text-gray-500">Email</p>
+                            <p className="text-gray-700">{user.email}</p>
                         </div>
-                    ))}
+
+                        <div>
+                            <p className="text-sm text-gray-500">Member since</p>
+                            <p className="text-gray-700">{formatDate(user.joinDate)}</p>
+                        </div>
+
+                        <div>
+                            <p className="text-sm text-gray-500">Employee ID</p>
+                            <p className="text-gray-700">{user.id}</p>
+                        </div>
+                    </div>
                 </div>
 
-                <div className="mt-16 text-center">
-                    <Link to="/history" className="mt-4 w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700">
-                        View All Bookings
-                    </Link>
-                </div>
+                {/* Recent bookings section */}
+                <div className="p-6">
+                    <h3 className="text-lg font-semibold mb-4">Recent Bookings</h3>
 
-                <div className="mt-8 text-center">
-                    <Link to="/payment" className="mt-4 w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700">
-                        Go to Payment
-                    </Link>
-                </div>
+                    <div className="space-y-3">
+                        {user.recentBookings.map(booking => (
+                            <div key={booking.id} className="bg-gray-50 p-3 rounded-md">
+                                <div className="flex justify-between">
+                                    <span className="font-medium">Seat #{booking.seatId}</span>
+                                    <span className="text-sm text-blue-600">{booking.time}</span>
+                                </div>
+                                <p className="text-sm text-gray-600">{formatDate(booking.date)}</p>
+                            </div>
+                        ))}
+                    </div>
 
+                    <div className="mt-6">
+                        <Link to="/history" className="block w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 text-center">
+                            View All Bookings
+                        </Link>
+                    </div>
+
+                    <div className="mt-4">
+                        <Link to="/payment" className="block w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 text-center">
+                            Go to Payment
+                        </Link>
+                    </div>
+                </div>
             </div>
 
-            {/* Settings and logout section */}
-            <div className="absolute bottom-0 w-full p-6 border-t border-gray-200">
+            {/* Settings and logout section - fixed at bottom */}
+            <div className="p-6 border-t border-gray-200 mt-auto">
                 <div className="flex justify-between">
                     <button className="text-gray-700 hover:text-gray-900 flex items-center">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">

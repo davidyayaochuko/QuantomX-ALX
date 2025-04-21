@@ -1,5 +1,5 @@
 // File: src/components/SeatModal.js
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 
 const SeatModal = ({ seat, onClose, onBook, parkingAvailable, selectedDate }) => {
   const [selectedTime, setSelectedTime] = useState(null);

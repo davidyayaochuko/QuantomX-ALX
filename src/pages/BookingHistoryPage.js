@@ -30,9 +30,7 @@ const BookingHistoryPage = () => {
     });
   };
 
-  const getDateOnly = (dateString) => {
-    return new Date(dateString).toISOString().split('T')[0];
-  };
+  // Removed the unused getDateOnly function
 
   const isDateInRange = (booking) => {
     if (dateFilter === 'all') return true;
@@ -81,6 +79,7 @@ const BookingHistoryPage = () => {
     return true;
   };
 
+  // Rest of your code remains unchanged
   const filteredBookings = bookings.filter(booking => {
     // Status filter
     const statusMatch = 

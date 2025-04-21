@@ -1,3 +1,6 @@
+
+
+
 // File: src/App.js
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
@@ -8,6 +11,7 @@ import LoginUser from './pages/LoginUser';
 import LoginAdmin from './pages/LoginAdmin';
 import SignUpUser from './pages/SignUpUser';
 import PaymentPage from './pages/PaymentPage';
+import QuantumXSplitLandingPage from './pages/SplitLoginPage'; // Import the split landing page
 
 import './App.css';
 
@@ -15,20 +19,21 @@ function App() {
   return (
     <Router>
       <Routes>
+        {/* Split Landing Page as the default route */}
+        <Route path="/" element={<QuantumXSplitLandingPage />} />
+        
         {/* Login Pages */}
+        <Route path="/login" element={<LoginUser />} />
+        <Route path="/admin/login" element={<LoginAdmin />} />
         <Route path="/signup" element={<SignUpUser />} />
-        <Route path="/signup" element={<SignUpUser />} />
-
-        {/* Login Pages */}
-        <Route path="/" element={<LoginUser />} />
-        <Route path="/admin" element={<LoginAdmin />} />
 
         {/* Main App Pages */}
         <Route path="/book" element={<BookingPage />} />
         <Route path="/history" element={<BookingHistoryPage />} />
+        <Route path="/payment" element={<PaymentPage />} />
 
-        <Route path="/payment" element={<PaymentPage />} /> {/* ✅ added */}
-
+        {/* Legacy routes for backward compatibility */}
+        <Route path="/admin" element={<LoginAdmin />} />
       </Routes>
     </Router>
   );

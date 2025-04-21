@@ -60,11 +60,12 @@ const LoginUser = () => {
                     {/* Login Button */}
                     <button
                         type="submit"
+                        onClick={() => navigate("/book")}
                         className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-semibold transition duration-200"
                     >
-                        <Link to="/book" className="text-blue-500 hover:underline font-medium">
+                        
                             Log In
-                        </Link>
+                        
                     </button>
                 </form>
 

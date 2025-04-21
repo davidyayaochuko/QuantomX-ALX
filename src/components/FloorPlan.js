@@ -6,23 +6,72 @@ const SEATS_STORAGE_KEY = 'bookedSeats';
 const PARKING_STORAGE_KEY = 'parkingSpaces';
 const BOOKING_HISTORY_KEY = 'bookingHistory';
 
-const FloorPlan = () => {
+const FloorPlan = ({ selectedDate, selectedTime }) => {
   const [selectedSeat, setSelectedSeat] = useState(null);
   const [bookedSeats, setBookedSeats] = useState([]);
   const [parkingTotal] = useState(10);
   const [parkingBooked, setParkingBooked] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
   
+  // Check if we're on mobile
   useEffect(() => {
-    // Load booked seats from localStorage
-    const storedBookings = JSON.parse(localStorage.getItem(SEATS_STORAGE_KEY)) || [];
-    setBookedSeats(storedBookings.map(b => b.id));
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
     
-    // Load parking info
-    const storedParking = parseInt(localStorage.getItem(PARKING_STORAGE_KEY) || '0');
-    setParkingBooked(storedParking);
+    // Initial check
+    checkMobile();
+    
+    // Add resize listener
+    window.addEventListener('resize', checkMobile);
+    
+    // Cleanup
+    return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  const handleBooking = (id, time, includeParking, extraSpace) => {
+  useEffect(() => {
+    // If a date is provided, filter bookings for that date
+    const dateString = selectedDate ? selectedDate.toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
+    
+    // Load booked seats from localStorage
+    const storedBookings = JSON.parse(localStorage.getItem(SEATS_STORAGE_KEY)) || [];
+    
+    // Filter bookings for the selected date if needed
+    const relevantBookings = selectedDate 
+      ? storedBookings.filter(booking => {
+          if (!booking.date) return false;
+          return new Date(booking.date).toISOString().split('T')[0] === dateString;
+        })
+      : storedBookings;
+    
+    setBookedSeats(relevantBookings.map(b => b.id));
+    
+    // Load parking info
+    try {
+      // First, try to load as an object with date keys
+      const parkingData = JSON.parse(localStorage.getItem(PARKING_STORAGE_KEY));
+      
+      if (typeof parkingData === 'object' && parkingData !== null) {
+        // It's the new format with date keys
+        setParkingBooked(parkingData[dateString] || 0);
+      } else if (typeof parkingData === 'number') {
+        // It's the old format (just a number)
+        setParkingBooked(parkingData);
+      } else {
+        // Default to 0
+        setParkingBooked(0);
+      }
+    } catch (error) {
+      // If there's any error, just use 0
+      setParkingBooked(0);
+    }
+  }, [selectedDate, selectedTime]);
+
+  const handleBooking = (id, time, includeParking, extraSpace, bookingDate = new Date()) => {
+    // Format the date
+    const dateString = bookingDate.toISOString();
+    const dateKey = dateString.split('T')[0];
+    
     // Add the seat to booked seats
     const updatedBookedSeats = [...bookedSeats, id];
     setBookedSeats(updatedBookedSeats);
@@ -36,7 +85,15 @@ const FloorPlan = () => {
       time,
       includeParking,
       extraSpace,
-      bookingTime: new Date().toISOString()
+      date: dateString,
+      bookingTime: new Date().toISOString(),
+      // Add end time (2 hours after start)
+      endTime: (() => {
+        const [hours, minutes] = time.split(':').map(Number);
+        const endTime = new Date(bookingDate);
+        endTime.setHours(hours + 2, minutes, 0, 0);
+        return endTime.toISOString();
+      })()
     };
     
     const updatedBookings = [...existingBookings, newBooking];
@@ -46,7 +103,28 @@ const FloorPlan = () => {
     if (includeParking) {
       const newParkingBooked = parkingBooked + 1;
       setParkingBooked(newParkingBooked);
-      localStorage.setItem(PARKING_STORAGE_KEY, newParkingBooked.toString());
+      
+      // Update parking storage - need to handle both formats
+      try {
+        const parkingData = JSON.parse(localStorage.getItem(PARKING_STORAGE_KEY) || '{}');
+        
+        // Handle the case where parking data is a number (old format)
+        if (typeof parkingData === 'number') {
+          // Convert to new format
+          const newParkingData = {};
+          newParkingData[dateKey] = parkingData + 1;
+          localStorage.setItem(PARKING_STORAGE_KEY, JSON.stringify(newParkingData));
+        } else {
+          // It's already the new format or empty object
+          parkingData[dateKey] = (parkingData[dateKey] || 0) + 1;
+          localStorage.setItem(PARKING_STORAGE_KEY, JSON.stringify(parkingData));
+        }
+      } catch (error) {
+        // If there's any error, create a new parking data object
+        const newParkingData = {};
+        newParkingData[dateKey] = 1;
+        localStorage.setItem(PARKING_STORAGE_KEY, JSON.stringify(newParkingData));
+      }
     }
 
     // Add to booking history
@@ -54,9 +132,11 @@ const FloorPlan = () => {
       id: Math.random().toString(36).substr(2, 9),
       seatId: id,
       time,
+      date: dateString,
       includeParking,
       extraSpace,
       bookingTime: new Date().toISOString(),
+      endTime: newBooking.endTime
     };
 
     const history = JSON.parse(localStorage.getItem(BOOKING_HISTORY_KEY)) || [];
@@ -67,6 +147,9 @@ const FloorPlan = () => {
   };
 
   const handleCancelBooking = (seatId) => {
+    // Get current date string if selectedDate is provided
+    const dateKey = selectedDate ? selectedDate.toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
+    
     // Remove from booked seats
     const updatedBookedSeats = bookedSeats.filter(id => id !== seatId);
     setBookedSeats(updatedBookedSeats);
@@ -75,24 +158,81 @@ const FloorPlan = () => {
     const existingBookings = JSON.parse(localStorage.getItem(SEATS_STORAGE_KEY)) || [];
     
     // Find the booking to cancel
-    const bookingToCancel = existingBookings.find(booking => booking.id === seatId);
+    const bookingToCancel = existingBookings.find(booking => {
+      // Match by ID and date if selectedDate is provided
+      if (selectedDate && booking.date) {
+        const bookingDateKey = new Date(booking.date).toISOString().split('T')[0];
+        return booking.id === seatId && bookingDateKey === dateKey;
+      }
+      // Otherwise just match by ID
+      return booking.id === seatId;
+    });
     
     // Update parking if needed
     if (bookingToCancel && bookingToCancel.includeParking) {
+      // Update UI state
       const newParkingBooked = Math.max(0, parkingBooked - 1);
       setParkingBooked(newParkingBooked);
-      localStorage.setItem(PARKING_STORAGE_KEY, newParkingBooked.toString());
+      
+      // Update storage - need to handle both formats
+      try {
+        const parkingData = JSON.parse(localStorage.getItem(PARKING_STORAGE_KEY));
+        
+        if (typeof parkingData === 'number') {
+          // It's the old format - just decrement
+          localStorage.setItem(PARKING_STORAGE_KEY, Math.max(0, parkingData - 1).toString());
+        } else if (typeof parkingData === 'object' && parkingData !== null) {
+          // It's the new format with date keys
+          if (bookingToCancel.date) {
+            const bookingDateKey = new Date(bookingToCancel.date).toISOString().split('T')[0];
+            parkingData[bookingDateKey] = Math.max(0, (parkingData[bookingDateKey] || 0) - 1);
+          } else {
+            // If no date on booking, use current date
+            parkingData[dateKey] = Math.max(0, (parkingData[dateKey] || 0) - 1);
+          }
+          localStorage.setItem(PARKING_STORAGE_KEY, JSON.stringify(parkingData));
+        }
+      } catch (error) {
+        // If there's any error, just set to 0
+        const newParkingData = {};
+        newParkingData[dateKey] = 0;
+        localStorage.setItem(PARKING_STORAGE_KEY, JSON.stringify(newParkingData));
+      }
     }
     
     // Update bookings
-    const updatedBookings = existingBookings.filter(booking => booking.id !== seatId);
+    let updatedBookings;
+    if (selectedDate && bookingToCancel && bookingToCancel.date) {
+      // If we have dates, filter by ID and date
+      const bookingDateKey = new Date(bookingToCancel.date).toISOString().split('T')[0];
+      updatedBookings = existingBookings.filter(booking => {
+        if (!booking.date) return booking.id !== seatId;
+        const bDateKey = new Date(booking.date).toISOString().split('T')[0];
+        return !(booking.id === seatId && bDateKey === bookingDateKey);
+      });
+    } else {
+      // Otherwise just filter by ID
+      updatedBookings = existingBookings.filter(booking => booking.id !== seatId);
+    }
+    
     localStorage.setItem(SEATS_STORAGE_KEY, JSON.stringify(updatedBookings));
     
     // Update history
     const history = JSON.parse(localStorage.getItem(BOOKING_HISTORY_KEY)) || [];
-    const updatedHistory = history.map(booking => 
-      booking.seatId === seatId ? {...booking, cancelled: true, cancelTime: new Date().toISOString()} : booking
-    );
+    const updatedHistory = history.map(booking => {
+      // Match by seatId and date if available
+      if (booking.seatId === seatId) {
+        if (selectedDate && booking.date) {
+          const bookingDateKey = new Date(booking.date).toISOString().split('T')[0];
+          if (bookingDateKey === dateKey) {
+            return {...booking, cancelled: true, cancelTime: new Date().toISOString()};
+          }
+        } else {
+          return {...booking, cancelled: true, cancelTime: new Date().toISOString()};
+        }
+      }
+      return booking;
+    });
     
     localStorage.setItem(BOOKING_HISTORY_KEY, JSON.stringify(updatedHistory));
   };
@@ -107,7 +247,8 @@ const FloorPlan = () => {
         onClick={() => {
           if (isBooked) {
             // Show confirmation dialog for cancellation
-            if (window.confirm(`Do you want to cancel booking for seat ${id}?`)) {
+            const dateMsg = selectedDate ? ` on ${selectedDate.toDateString()}` : '';
+            if (window.confirm(`Do you want to cancel booking for seat ${id}${dateMsg}?`)) {
               handleCancelBooking(id);
             }
           } else {
@@ -116,9 +257,14 @@ const FloorPlan = () => {
         }}
       >
         <div 
-          className={`w-10 h-10 rounded-full flex items-center justify-center text-sm 
+          className={`rounded-full flex items-center justify-center
             ${isBooked ? 'bg-red-500 cursor-pointer' : 'bg-green-500 cursor-pointer hover:bg-green-600'} 
             text-white font-semibold shadow-md transition-all duration-200`}
+          style={{ 
+            width: isMobile ? '28px' : '36px', 
+            height: isMobile ? '28px' : '36px',
+            fontSize: isMobile ? '10px' : '12px'
+          }}
         >
           {id}
         </div>
@@ -126,163 +272,178 @@ const FloorPlan = () => {
     );
   };
 
-  // Helper for a room or meeting space
-  const MeetingRoom = ({ id, width, height, top, left, label = "" }) => {
+  // Helper for meeting pods
+  const MeetingPod = ({ id, className = "" }) => {
     return (
       <div 
-        className="absolute bg-gray-200 rounded-md flex items-center justify-center"
-        style={{ width, height, top, left }}
+        className={`rounded-full bg-gray-300 flex items-center justify-center text-gray-600 ${className}`}
+        style={{ 
+          width: isMobile ? '32px' : '42px', 
+          height: isMobile ? '32px' : '42px',
+          fontSize: isMobile ? '9px' : '12px'
+        }}
       >
-        <span className="text-xs text-gray-600">{label || `Room ${id}`}</span>
+        {id}
       </div>
     );
   };
 
-  // Helper for a desk group
-  const DeskGroup = ({ children, className = "", style = {} }) => {
-    return (
-      <div className={`flex ${className}`} style={style}>
-        {children}
-      </div>
-    );
+  // Format the selected date for display
+  const formatDate = (date) => {
+    return date.toLocaleDateString('en-US', {
+      weekday: 'long',
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric'
+    });
   };
+
+  // Create the meeting room labels
+  const MeetingLabel = ({ label, top, left }) => (
+    <div 
+      className="absolute text-xs text-center bg-white bg-opacity-70 p-1 rounded"
+      style={{ 
+        top, 
+        left, 
+        fontSize: isMobile ? '8px' : '10px',
+        width: isMobile ? '60px' : '70px'
+      }}
+    >
+      {label}
+    </div>
+  );
 
   return (
     <div className="relative w-full max-w-4xl mx-auto bg-blue-50 rounded-lg p-4 border-2 border-blue-200">
-      {/* Office layout - this is a simplified representation */}
-      <div className="relative w-full" style={{ minHeight: "600px" }}>
-        {/* Top section */}
-        <div className="absolute top-4 left-1/2 transform -translate-x-1/2">
-          <div className="flex gap-6">
-            {/* Top left - Meeting pods */}
-            <div className="flex space-x-4">
-              <div className="w-12 h-12 bg-gray-300 rounded-full"></div>
-              <div className="w-12 h-12 bg-gray-300 rounded-full"></div>
-              <div className="w-12 h-12 bg-gray-300 rounded-full"></div>
-              <div className="w-12 h-12 bg-gray-300 rounded-full"></div>
+      {/* Date display */}
+      <div className="text-center mb-4">
+        <h2 className="text-lg font-medium text-gray-800">Viewing workspaces for</h2>
+        <p className="text-xl font-bold text-blue-700">{formatDate(selectedDate || new Date())}</p>
+      </div>
+      
+      {/* Office layout using Flexbox and Grid for better mobile responsiveness */}
+      <div className="relative bg-blue-50 border border-blue-100 rounded-lg p-4">
+        {/* Meeting pods row */}
+        <div className="flex justify-center mb-6">
+          <div className="flex space-x-3">
+            <MeetingPod id="" />
+            <MeetingPod id="" />
+            <MeetingPod id="" />
+            <MeetingPod id="" />
+          </div>
+        </div>
+
+        {/* Horizontal divider */}
+        <div className="w-full border-t border-blue-200 border-dashed my-2"></div>
+        
+        {/* Top seats grid */}
+        <div className="flex justify-end mb-6">
+          <div className="grid grid-cols-4 grid-rows-2 gap-2">
+            <WorkspaceSeat id={1} />
+            <WorkspaceSeat id={2} />
+            <WorkspaceSeat id={3} />
+            <WorkspaceSeat id={4} />
+            <WorkspaceSeat id={5} />
+            <WorkspaceSeat id={6} />
+            <WorkspaceSeat id={7} />
+            <WorkspaceSeat id={8} />
+          </div>
+        </div>
+        
+        {/* Horizontal divider */}
+        <div className="w-full border-t border-blue-200 border-dashed my-2"></div>
+        
+        {/* Middle section with two columns */}
+        <div className="flex">
+          {/* Left column */}
+          <div className="w-1/2 pr-2 border-r border-blue-200 border-dashed">
+            <div className="space-y-5">
+              <div className="flex justify-evenly">
+                <WorkspaceSeat id={9} />
+                <WorkspaceSeat id={10} />
+                <WorkspaceSeat id={11} />
+                <WorkspaceSeat id={12} />
+              </div>
+              <div className="flex justify-evenly">
+                <WorkspaceSeat id={13} />
+                <WorkspaceSeat id={14} />
+                <WorkspaceSeat id={15} />
+                <WorkspaceSeat id={16} />
+              </div>
+              <div className="flex justify-evenly">
+                <WorkspaceSeat id={17} />
+                <WorkspaceSeat id={18} />
+                <WorkspaceSeat id={19} />
+                <WorkspaceSeat id={20} />
+              </div>
+              <div className="flex justify-evenly">
+                <WorkspaceSeat id={21} />
+                <WorkspaceSeat id={22} />
+                <WorkspaceSeat id={23} />
+                <WorkspaceSeat id={24} />
+              </div>
             </div>
-            
-            {/* Top right - Desk group 1-8 */}
-            <div className="grid grid-cols-4 grid-rows-2 gap-4">
-              <WorkspaceSeat id={1} />
-              <WorkspaceSeat id={2} />
-              <WorkspaceSeat id={3} />
-              <WorkspaceSeat id={4} />
-              <WorkspaceSeat id={5} />
-              <WorkspaceSeat id={6} />
-              <WorkspaceSeat id={7} />
-              <WorkspaceSeat id={8} />
+          </div>
+          
+          {/* Right column */}
+          <div className="w-1/2 pl-2">
+            <div className="space-y-5">
+              <div className="flex justify-evenly">
+                <WorkspaceSeat id={25} />
+                <WorkspaceSeat id={26} />
+                <WorkspaceSeat id={27} />
+                <WorkspaceSeat id={28} />
+              </div>
+              <div className="flex justify-evenly">
+                <WorkspaceSeat id={29} />
+                <WorkspaceSeat id={30} />
+                <WorkspaceSeat id={31} />
+                <WorkspaceSeat id={32} />
+              </div>
+              <div className="flex justify-evenly">
+                <WorkspaceSeat id={33} />
+                <WorkspaceSeat id={34} />
+                <WorkspaceSeat id={35} />
+                <WorkspaceSeat id={36} />
+              </div>
+              <div className="flex justify-evenly">
+                <WorkspaceSeat id={37} />
+                <WorkspaceSeat id={38} />
+                <WorkspaceSeat id={39} />
+                <WorkspaceSeat id={40} />
+              </div>
             </div>
           </div>
         </div>
-
-        {/* Middle section - left side desks */}
-        <div className="absolute left-4 top-40">
-          <div className="flex flex-col space-y-8">
-            <DeskGroup className="space-x-4">
-              <WorkspaceSeat id={9} />
-              <WorkspaceSeat id={10} />
-              <WorkspaceSeat id={11} />
-              <WorkspaceSeat id={12} />
-            </DeskGroup>
-            <DeskGroup className="space-x-4">
-              <WorkspaceSeat id={13} />
-              <WorkspaceSeat id={14} />
-              <WorkspaceSeat id={15} />
-              <WorkspaceSeat id={16} />
-            </DeskGroup>
-            <DeskGroup className="space-x-4">
-              <WorkspaceSeat id={17} />
-              <WorkspaceSeat id={18} />
-              <WorkspaceSeat id={19} />
-              <WorkspaceSeat id={20} />
-            </DeskGroup>
-            <DeskGroup className="space-x-4">
-              <WorkspaceSeat id={21} />
-              <WorkspaceSeat id={22} />
-              <WorkspaceSeat id={23} />
-              <WorkspaceSeat id={24} />
-            </DeskGroup>
+        
+        {/* Horizontal divider */}
+        <div className="w-full border-t border-blue-200 border-dashed my-2"></div>
+        
+        {/* Bottom section */}
+        <div className="flex mt-4">
+          
+          {/* Meeting rooms */}
+          <div className="w-3/4 relative flex justify-around" style={{ minHeight: "60px" }}>
+            <MeetingLabel label="Meeting A" top="20px" left="30%" />
+            <MeetingLabel label="Meeting B" top="20px" left="70%" />
           </div>
         </div>
-
-        {/* Middle section - right side desks */}
-        <div className="absolute right-4 top-40">
-          <div className="flex flex-col space-y-8">
-            <DeskGroup className="space-x-4">
-              <WorkspaceSeat id={25} />
-              <WorkspaceSeat id={26} />
-              <WorkspaceSeat id={27} />
-              <WorkspaceSeat id={28} />
-            </DeskGroup>
-            <DeskGroup className="space-x-4">
-              <WorkspaceSeat id={29} />
-              <WorkspaceSeat id={30} />
-              <WorkspaceSeat id={31} />
-              <WorkspaceSeat id={32} />
-            </DeskGroup>
-            <DeskGroup className="space-x-4">
-              <WorkspaceSeat id={33} />
-              <WorkspaceSeat id={34} />
-              <WorkspaceSeat id={35} />
-              <WorkspaceSeat id={36} />
-            </DeskGroup>
-            <DeskGroup className="space-x-4">
-              <WorkspaceSeat id={37} />
-              <WorkspaceSeat id={38} />
-              <WorkspaceSeat id={39} />
-              <WorkspaceSeat id={40} />
-            </DeskGroup>
-          </div>
-        </div>
-
-        {/* Bottom section - Meeting rooms and additional seats */}
-        <div className="absolute bottom-4 left-4">
-          <div className="flex flex-col space-y-4">
-            <WorkspaceSeat id={41} />
-            <WorkspaceSeat id={42} />
-            <WorkspaceSeat id={43} />
-          </div>
-        </div>
-
-        {/* Meeting rooms at the bottom */}
-        <MeetingRoom 
-          id="A" 
-          width="80px" 
-          height="60px" 
-          top="500px" 
-          left="160px" 
-          label="Meeting A"
-        />
-        <MeetingRoom 
-          id="B" 
-          width="80px" 
-          height="60px" 
-          top="500px" 
-          left="250px" 
-          label="Meeting B"
-        />
-
-        {/* Divider lines */}
-        <div className="absolute top-32 left-0 w-full border-t border-blue-200 border-dashed"></div>
-        <div className="absolute top-32 left-1/2 h-[400px] border-l border-blue-200 border-dashed"></div>
-        <div className="absolute top-400 left-0 w-full border-t border-blue-200 border-dashed"></div>
 
         {/* Legend */}
-        <div className="absolute bottom-4 right-4 bg-white p-2 rounded shadow-md text-xs">
+        <div className="absolute bottom-2 right-2 bg-white p-2 rounded shadow-sm text-xs">
           <div className="flex items-center mb-1">
-            <div className="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
+            <div className="w-3 h-3 rounded-full bg-green-500 mr-1"></div>
             <span>Available</span>
           </div>
           <div className="flex items-center">
-            <div className="w-3 h-3 rounded-full bg-red-500 mr-2"></div>
+            <div className="w-3 h-3 rounded-full bg-red-500 mr-1"></div>
             <span>Booked</span>
           </div>
         </div>
       </div>
 
       {/* Parking information */}
-      <div className="mt-6 bg-white p-3 rounded-lg shadow-md">
+      <div className="mt-4 bg-white p-3 rounded-lg shadow-md">
         <div className="flex justify-between items-center">
           <h3 className="text-lg font-semibold">Parking Spaces</h3>
           <span className={`px-2 py-1 rounded-full text-sm ${parkingBooked >= parkingTotal ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
@@ -304,6 +465,7 @@ const FloorPlan = () => {
           onClose={() => setSelectedSeat(null)}
           onBook={handleBooking}
           parkingAvailable={parkingTotal - parkingBooked}
+          selectedDate={selectedDate}
         />
       )}
     </div>

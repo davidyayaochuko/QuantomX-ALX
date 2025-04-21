@@ -24,3 +24,45 @@
       transform: translateY(0);
     }
   }
+
+  /* User profile animations */
+.user-profile-enter {
+    animation: slideInRight 0.3s ease-out forwards;
+  }
+  
+  .user-profile-exit {
+    animation: slideOutRight 0.3s ease-in forwards;
+  }
+  
+  @keyframes slideInRight {
+    from {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+  
+  @keyframes slideOutRight {
+    from {
+      transform: translateX(0);
+      opacity: 1;
+    }
+    to {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+  }
+  
+  /* Responsive adjustments */
+  @media screen and (max-width: 768px) {
+    .responsive-grid {
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    }
+    
+    .user-profile-sidebar {
+      width: 100%;
+    }
+  }

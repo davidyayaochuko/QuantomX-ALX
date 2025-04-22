@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import StructureForm from './StructureForm';
-import DepartmentList from './DepartmentList';
+import { Card, Button, ListGroup } from 'react-bootstrap';
+
 
 type Structure = {
   department: string;
@@ -8,21 +9,24 @@ type Structure = {
 };
 
 export default function OrganizationStructure() {
-  const [structures, setStructures] = useState<Structure[]>([]);
-
-  const handleAdd = (entry: Structure) => {
-    setStructures([...structures, entry]);
-  };
-
-  const handleDelete = (index: number) => {
-    setStructures(structures.filter((_, i) => i !== index));
-  };
+  const [items, setItems] = useState<Structure[]>([]);
+  const add = (entry: Structure) => setItems([...items, entry]);
+  const remove = (i: number) => setItems(items.filter((_, idx) => idx !== i));
 
   return (
-    <div className="container mt-4">
-      <h4 className="mb-4">Define Organization Structure</h4>
-      <StructureForm onAdd={handleAdd} />
-      <DepartmentList structures={structures} onDelete={handleDelete} />
-    </div>
+    <Card className="mx-auto" style={{ maxWidth: 800 }}>
+      <Card.Header>Organization Structure</Card.Header>
+      <Card.Body>
+        <StructureForm onAdd={add} />
+        <ListGroup variant="flush">
+          {items.map((it, i) => (
+            <ListGroup.Item key={i} className="d-flex justify-content-between">
+              <span><strong>{it.department}</strong>{it.team && ` – ${it.team}`}</span>
+              <Button size="sm" variant="danger" onClick={() => remove(i)}>Delete</Button>
+            </ListGroup.Item>
+          ))}
+        </ListGroup>
+      </Card.Body>
+    </Card>
   );
 }

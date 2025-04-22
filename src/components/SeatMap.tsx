@@ -1,4 +1,4 @@
-// File: src/components/SeatMap.js
+// File: src/components/SeatMap.tsx
 import React, { useState, useEffect } from 'react';
 import Seat from './Seat';
 import SeatModal from './SeatModal';
@@ -8,15 +8,24 @@ const SEATS_STORAGE_KEY = 'bookedSeats';
 const PARKING_STORAGE_KEY = 'parkingSpaces';
 const BOOKING_HISTORY_KEY = 'bookingHistory';
 
-const SeatMap = () => {
-  const [seats, setSeats] = useState([]);
-  const [selectedSeat, setSelectedSeat] = useState(null);
-  const [parkingTotal] = useState(10);
-  const [parkingBooked, setParkingBooked] = useState(0);
+interface SeatData {
+  id: number;
+  isBooked: boolean;
+  time: string | null;
+  includeParking: boolean;
+  extraSpace: boolean;
+}
+
+const SeatMap: React.FC = () => {
+  const [seats, setSeats] = useState<SeatData[]>([]);
+  const [selectedSeat, setSelectedSeat] = useState<SeatData | null>(null);
+  const [parkingTotal] = useState<number>(10);
+  const [parkingBooked, setParkingBooked] = useState<number>(0);
   
   useEffect(() => {
     // Load booked seats from localStorage
-    const storedBookings = JSON.parse(localStorage.getItem(SEATS_STORAGE_KEY)) || [];
+    const storedBookingsStr = localStorage.getItem(SEATS_STORAGE_KEY);
+    const storedBookings: any[] = storedBookingsStr ? JSON.parse(storedBookingsStr) : [];
 
     // Generate 12 seats and mark booked ones
     const generatedSeats = Array.from({ length: 12 }, (_, i) => {
@@ -33,11 +42,12 @@ const SeatMap = () => {
     setSeats(generatedSeats);
 
     // Load parking info
-    const storedParking = parseInt(localStorage.getItem(PARKING_STORAGE_KEY) || '0');
+    const storedParkingStr = localStorage.getItem(PARKING_STORAGE_KEY);
+    const storedParking = storedParkingStr ? parseInt(storedParkingStr) : 0;
     setParkingBooked(storedParking);
   }, []);
 
-  const handleBooking = (id, time, includeParking, extraSpace) => {
+  const handleBooking = (id: number, time: string, includeParking: boolean, extraSpace: boolean): void => {
     // Update seat booking
     const updated = seats.map((seat) =>
       seat.id === id ? { 
@@ -80,14 +90,15 @@ const SeatMap = () => {
       bookingTime,
     };
 
-    const history = JSON.parse(localStorage.getItem(BOOKING_HISTORY_KEY)) || [];
+    const historyStr = localStorage.getItem(BOOKING_HISTORY_KEY);
+    const history = historyStr ? JSON.parse(historyStr) : [];
     history.push(booking);
     localStorage.setItem(BOOKING_HISTORY_KEY, JSON.stringify(history));
 
     setSelectedSeat(null);
   };
 
-  const handleCancelBooking = (seatId) => {
+  const handleCancelBooking = (seatId: number): void => {
     // Find the seat to cancel
     const seatToCancel = seats.find(seat => seat.id === seatId);
     
@@ -126,8 +137,9 @@ const SeatMap = () => {
     localStorage.setItem(SEATS_STORAGE_KEY, JSON.stringify(bookedSeats));
     
     // Update history
-    const history = JSON.parse(localStorage.getItem(BOOKING_HISTORY_KEY)) || [];
-    const updatedHistory = history.map(booking => 
+    const historyStr = localStorage.getItem(BOOKING_HISTORY_KEY);
+    const history = historyStr ? JSON.parse(historyStr) : [];
+    const updatedHistory = history.map((booking: any) => 
       booking.seatId === seatId ? {...booking, cancelled: true, cancelTime: new Date().toISOString()} : booking
     );
     
@@ -169,6 +181,7 @@ const SeatMap = () => {
           onClose={() => setSelectedSeat(null)}
           onBook={handleBooking}
           parkingAvailable={parkingTotal - parkingBooked}
+          selectedDate={new Date()} // Pass the current date as a default
         />
       )}
     </div>

@@ -1,25 +1,44 @@
-// File: src/pages/BookingHistoryPage.js
-import React, { useState, useEffect } from 'react';
+// File: src/pages/BookingHistoryPage.tsx
+import React, { useState, useEffect, ChangeEvent } from 'react';
 import { Link } from 'react-router-dom';
 
 const BOOKING_HISTORY_KEY = 'bookingHistory';
 
-const BookingHistoryPage = () => {
-  const [bookings, setBookings] = useState([]);
-  const [filter, setFilter] = useState('all'); // 'all', 'active', 'cancelled'
-  const [dateFilter, setDateFilter] = useState('all'); // 'all', 'today', 'thisWeek', 'thisMonth'
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
-  const [showDateRange, setShowDateRange] = useState(false);
+interface Booking {
+  id: string;
+  seatId: number;
+  date?: string;
+  time?: string;
+  includeParking: boolean;
+  extraSpace: boolean;
+  bookingTime: string;
+  cancelled?: boolean;
+  cancelTime?: string;
+  [key: string]: any; // Allow additional properties
+}
+
+type FilterType = 'all' | 'active' | 'cancelled';
+type DateFilterType = 'all' | 'today' | 'thisWeek' | 'thisMonth' | 'custom';
+
+const BookingHistoryPage: React.FC = () => {
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [filter, setFilter] = useState<FilterType>('all');
+  const [dateFilter, setDateFilter] = useState<DateFilterType>('all');
+  const [startDate, setStartDate] = useState<string>('');
+  const [endDate, setEndDate] = useState<string>('');
+  const [showDateRange, setShowDateRange] = useState<boolean>(false);
 
   useEffect(() => {
-    const history = JSON.parse(localStorage.getItem(BOOKING_HISTORY_KEY)) || [];
+    const historyStr = localStorage.getItem(BOOKING_HISTORY_KEY);
+    const history: Booking[] = historyStr ? JSON.parse(historyStr) : [];
     // Sort by booking date, newest first
-    history.sort((a, b) => new Date(b.bookingTime) - new Date(a.bookingTime));
+    history.sort((a, b) => {
+      return new Date(b.bookingTime).getTime() - new Date(a.bookingTime).getTime();
+    });
     setBookings(history);
   }, []);
 
-  const formatDate = (dateString) => {
+  const formatDate = (dateString: string): string => {
     const date = new Date(dateString);
     return date.toLocaleString('en-US', {
       month: 'short',
@@ -30,9 +49,7 @@ const BookingHistoryPage = () => {
     });
   };
 
-  // Removed the unused getDateOnly function
-
-  const isDateInRange = (booking) => {
+  const isDateInRange = (booking: Booking): boolean => {
     if (dateFilter === 'all') return true;
     
     const bookingDate = booking.date ? new Date(booking.date) : new Date(booking.bookingTime);
@@ -79,7 +96,6 @@ const BookingHistoryPage = () => {
     return true;
   };
 
-  // Rest of your code remains unchanged
   const filteredBookings = bookings.filter(booking => {
     // Status filter
     const statusMatch = 
@@ -94,7 +110,7 @@ const BookingHistoryPage = () => {
     return statusMatch && dateMatch;
   });
 
-  const handleDateFilterChange = (newFilter) => {
+  const handleDateFilterChange = (newFilter: DateFilterType): void => {
     setDateFilter(newFilter);
     if (newFilter === 'custom') {
       setShowDateRange(true);
@@ -111,7 +127,7 @@ const BookingHistoryPage = () => {
           <div className="flex justify-between items-center h-16">
             <h1 className="text-xl font-bold text-gray-900">Booking History</h1>
             <Link 
-              to="/" 
+              to="/book" 
               className="text-blue-600 hover:text-blue-800 font-medium"
             >
               &larr; Back to Booking
@@ -224,7 +240,7 @@ const BookingHistoryPage = () => {
                       <input
                         type="date"
                         value={startDate}
-                        onChange={(e) => setStartDate(e.target.value)}
+                        onChange={(e: ChangeEvent<HTMLInputElement>) => setStartDate(e.target.value)}
                         className="px-2 py-1 text-sm border border-gray-300 rounded"
                         placeholder="Start date"
                       />
@@ -232,7 +248,7 @@ const BookingHistoryPage = () => {
                       <input
                         type="date"
                         value={endDate}
-                        onChange={(e) => setEndDate(e.target.value)}
+                        onChange={(e: ChangeEvent<HTMLInputElement>) => setEndDate(e.target.value)}
                         className="px-2 py-1 text-sm border border-gray-300 rounded"
                         placeholder="End date"
                       />
@@ -308,7 +324,7 @@ const BookingHistoryPage = () => {
                           <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                           </svg>
-                          <span>Cancelled on: {formatDate(booking.cancelTime)}</span>
+                          <span>Cancelled on: {formatDate(booking.cancelTime!)}</span>
                         </div>
                       )}
                       {!booking.cancelled && (
@@ -318,20 +334,23 @@ const BookingHistoryPage = () => {
                             onClick={() => {
                               if (window.confirm(`Are you sure you want to cancel your booking for seat ${booking.seatId}?`)) {
                                 // Handle cancellation
-                                const history = JSON.parse(localStorage.getItem(BOOKING_HISTORY_KEY)) || [];
+                                const historyStr = localStorage.getItem(BOOKING_HISTORY_KEY);
+                                const history: Booking[] = historyStr ? JSON.parse(historyStr) : [];
                                 const updatedHistory = history.map(b => 
                                   b.id === booking.id ? {...b, cancelled: true, cancelTime: new Date().toISOString()} : b
                                 );
                                 localStorage.setItem(BOOKING_HISTORY_KEY, JSON.stringify(updatedHistory));
                                 
                                 // Also remove from active bookings
-                                const seats = JSON.parse(localStorage.getItem('bookedSeats')) || [];
-                                const updatedSeats = seats.filter(s => s.id !== booking.seatId);
+                                const seatsStr = localStorage.getItem('bookedSeats');
+                                const seats = seatsStr ? JSON.parse(seatsStr) : [];
+                                const updatedSeats = seats.filter((s: any) => s.id !== booking.seatId);
                                 localStorage.setItem('bookedSeats', JSON.stringify(updatedSeats));
                                 
                                 // Update parking if needed
                                 if (booking.includeParking) {
-                                  const parkingData = JSON.parse(localStorage.getItem('parkingSpaces') || '{}');
+                                  const parkingDataStr = localStorage.getItem('parkingSpaces');
+                                  const parkingData: Record<string, number> = parkingDataStr ? JSON.parse(parkingDataStr) : {};
                                   const dateKey = booking.date ? new Date(booking.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
                                   parkingData[dateKey] = Math.max(0, (parkingData[dateKey] || 0) - 1);
                                   localStorage.setItem('parkingSpaces', JSON.stringify(parkingData));

@@ -1,4 +1,4 @@
-// File: src/pages/BookingPage.js
+// File: src/pages/BookingPage.tsx
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import FloorPlan from '../components/FloorPlan';
@@ -7,28 +7,38 @@ import SeatList from '../components/SeatList';
 import Calendar from '../components/Calendar';
 import UserProfile from '../components/UserProfile';
 
-const BookingPage = () => {
-  const [view, setView] = useState('map'); // 'day', 'month', 'grid', 'list', 'map'
-  const [selectedDate, setSelectedDate] = useState(new Date());
-  const [selectedLocation, setSelectedLocation] = useState('WORKSPACE HUB');
-  const [selectedTime, setSelectedTime] = useState('08:00');
-  const [showCalendar, setShowCalendar] = useState(false);
-  const [showLocations, setShowLocations] = useState(false);
-  const [showTimes, setShowTimes] = useState(false);
-  const [showTags, setShowTags] = useState(false);
-  const [showUserProfile, setShowUserProfile] = useState(false);
-  const [showMobileMenu, setShowMobileMenu] = useState(false);
+interface ViewOption {
+  id: string;
+  label: string;
+}
+
+interface User {
+  name: string;
+  profileImage: string;
+}
+
+const BookingPage: React.FC = () => {
+  const [view, setView] = useState<string>('map'); // 'day', 'month', 'grid', 'list', 'map'
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [selectedLocation, setSelectedLocation] = useState<string>('WORKSPACE HUB');
+  const [selectedTime, setSelectedTime] = useState<string>('08:00');
+  const [showCalendar, setShowCalendar] = useState<boolean>(false);
+  const [showLocations, setShowLocations] = useState<boolean>(false);
+  const [showTimes, setShowTimes] = useState<boolean>(false);
+  const [showTags, setShowTags] = useState<boolean>(false);
+  const [showUserProfile, setShowUserProfile] = useState<boolean>(false);
+  const [showMobileMenu, setShowMobileMenu] = useState<boolean>(false);
 
   // Sample user data
-  const user = {
+  const user: User = {
     name: 'John Doe',
     profileImage: '/api/placeholder/40/40'
   };
 
-  const locations = ['WORKSPACE HUB', 'SOUTH WING', 'NORTH WING', 'EXECUTIVE FLOOR'];
-  const times = ['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00'];
-  const tags = ['QUIET', 'COLLABORATIVE', 'MEETING', 'STANDING DESK', 'WINDOW VIEW'];
-  const viewOptions = [
+  const locations: string[] = ['WORKSPACE HUB', 'SOUTH WING', 'NORTH WING', 'EXECUTIVE FLOOR'];
+  const times: string[] = ['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00'];
+  const tags: string[] = ['QUIET', 'COLLABORATIVE', 'MEETING', 'STANDING DESK', 'WINDOW VIEW'];
+  const viewOptions: ViewOption[] = [
     { id: 'day', label: 'DAY' },
     { id: 'month', label: 'MONTH' },
     { id: 'grid', label: 'GRID' },
@@ -36,7 +46,7 @@ const BookingPage = () => {
     { id: 'map', label: 'MAP' }
   ];
 
-  const formatDate = (date) => {
+  const formatDate = (date: Date): string => {
     return date.toLocaleDateString('en-US', {
       weekday: 'long',
       day: 'numeric',
@@ -45,30 +55,30 @@ const BookingPage = () => {
     }).toUpperCase();
   };
 
-  const formatDateShort = (date) => {
+  const formatDateShort = (date: Date): string => {
     return date.toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric'
     }).toUpperCase();
   };
 
-  const handleDateChange = (date) => {
+  const handleDateChange = (date: Date): void => {
     setSelectedDate(date);
     setShowCalendar(false);
   };
 
-  const handleLocationChange = (location) => {
+  const handleLocationChange = (location: string): void => {
     setSelectedLocation(location);
     setShowLocations(false);
   };
 
-  const handleTimeChange = (time) => {
+  const handleTimeChange = (time: string): void => {
     setSelectedTime(time);
     setShowTimes(false);
   };
 
   // Helper to change date by offset
-  const changeDate = (offset) => {
+  const changeDate = (offset: number): void => {
     const newDate = new Date(selectedDate);
     newDate.setDate(newDate.getDate() + offset);
     setSelectedDate(newDate);
@@ -76,10 +86,11 @@ const BookingPage = () => {
 
   // Close dropdowns when clicking outside
   useEffect(() => {
-    const handleOutsideClick = (e) => {
-      if (!e.target.closest('.dropdown-container') && 
-          !e.target.closest('.user-profile-button') &&
-          !e.target.closest('.mobile-menu-button')) {
+    const handleOutsideClick = (e: MouseEvent): void => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('.dropdown-container') && 
+          !target.closest('.user-profile-button') &&
+          !target.closest('.mobile-menu-button')) {
         setShowCalendar(false);
         setShowLocations(false);
         setShowTimes(false);

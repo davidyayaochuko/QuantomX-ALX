@@ -6,6 +6,10 @@ module.exports = {
       screens: {
         'max-sm': {'max': '639px'},  // This targets screens 639px and below
       },
+      flex: {
+        '0.6': '0.6',
+        '1.4': '1.4'
+      }
     },
   },
   plugins: [],

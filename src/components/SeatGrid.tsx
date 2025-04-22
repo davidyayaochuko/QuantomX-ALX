@@ -1,4 +1,4 @@
-// File: src/components/SeatGrid.js
+// File: src/components/SeatGrid.tsx
 import React, { useState, useEffect } from 'react';
 import SeatModal from './SeatModal';
 
@@ -6,15 +6,36 @@ const SEATS_STORAGE_KEY = 'bookedSeats';
 const PARKING_STORAGE_KEY = 'parkingSpaces';
 const BOOKING_HISTORY_KEY = 'bookingHistory';
 
-const SeatGrid = ({ selectedDate, selectedTime }) => {
-  const [seats, setSeats] = useState([]);
-  const [selectedSeat, setSelectedSeat] = useState(null);
-  const [parkingTotal] = useState(10);
-  const [parkingBooked, setParkingBooked] = useState(0);
+interface SeatGridProps {
+  selectedDate: Date;
+  selectedTime: string;
+}
+
+interface Seat {
+  id: number;
+  type: string;
+  isBooked: boolean;
+  time: string | null;
+  includeParking: boolean;
+  extraSpace: boolean;
+}
+
+interface TypeInfo {
+  label: string;
+  icon: string;
+  color: string;
+}
+
+const SeatGrid: React.FC<SeatGridProps> = ({ selectedDate, selectedTime }) => {
+  const [seats, setSeats] = useState<Seat[]>([]);
+  const [selectedSeat, setSelectedSeat] = useState<Seat | null>(null);
+  const [parkingTotal] = useState<number>(10);
+  const [parkingBooked, setParkingBooked] = useState<number>(0);
   
   useEffect(() => {
     // Load booked seats from localStorage
-    const storedBookings = JSON.parse(localStorage.getItem(SEATS_STORAGE_KEY)) || [];
+    const storedBookingsStr = localStorage.getItem(SEATS_STORAGE_KEY);
+    const storedBookings: any[] = storedBookingsStr ? JSON.parse(storedBookingsStr) : [];
 
     // Generate 24 seats with different types (desk, meeting, quiet, etc.)
     const generatedSeats = Array.from({ length: 24 }, (_, i) => {
@@ -40,11 +61,12 @@ const SeatGrid = ({ selectedDate, selectedTime }) => {
     setSeats(generatedSeats);
 
     // Load parking info
-    const storedParking = parseInt(localStorage.getItem(PARKING_STORAGE_KEY) || '0');
+    const storedParkingStr = localStorage.getItem(PARKING_STORAGE_KEY);
+    const storedParking = storedParkingStr ? parseInt(storedParkingStr) : 0;
     setParkingBooked(storedParking);
   }, [selectedDate, selectedTime]);
 
-  const handleBooking = (id, time, includeParking, extraSpace) => {
+  const handleBooking = (id: number, time: string, includeParking: boolean, extraSpace: boolean): void => {
     // Update seat booking
     const updated = seats.map((seat) =>
       seat.id === id ? { 
@@ -87,14 +109,15 @@ const SeatGrid = ({ selectedDate, selectedTime }) => {
       bookingTime,
     };
 
-    const history = JSON.parse(localStorage.getItem(BOOKING_HISTORY_KEY)) || [];
+    const historyStr = localStorage.getItem(BOOKING_HISTORY_KEY);
+    const history = historyStr ? JSON.parse(historyStr) : [];
     history.push(booking);
     localStorage.setItem(BOOKING_HISTORY_KEY, JSON.stringify(history));
 
     setSelectedSeat(null);
   };
 
-  const handleCancelBooking = (seatId) => {
+  const handleCancelBooking = (seatId: number): void => {
     // Find the seat to cancel
     const seatToCancel = seats.find(seat => seat.id === seatId);
     
@@ -133,15 +156,16 @@ const SeatGrid = ({ selectedDate, selectedTime }) => {
     localStorage.setItem(SEATS_STORAGE_KEY, JSON.stringify(bookedSeats));
     
     // Update history
-    const history = JSON.parse(localStorage.getItem(BOOKING_HISTORY_KEY)) || [];
-    const updatedHistory = history.map(booking => 
+    const historyStr = localStorage.getItem(BOOKING_HISTORY_KEY);
+    const history = historyStr ? JSON.parse(historyStr) : [];
+    const updatedHistory = history.map((booking: any) => 
       booking.seatId === seatId ? {...booking, cancelled: true, cancelTime: new Date().toISOString()} : booking
     );
     
     localStorage.setItem(BOOKING_HISTORY_KEY, JSON.stringify(updatedHistory));
   };
 
-  const getSeatTypeInfo = (type) => {
+  const getSeatTypeInfo = (type: string): TypeInfo => {
     switch (type) {
       case 'window':
         return { label: 'Window', icon: '🪟', color: 'bg-green-500' };
@@ -233,6 +257,7 @@ const SeatGrid = ({ selectedDate, selectedTime }) => {
           onClose={() => setSelectedSeat(null)}
           onBook={handleBooking}
           parkingAvailable={parkingTotal - parkingBooked}
+          selectedDate={selectedDate}
         />
       )}
     </div>

@@ -1,17 +1,23 @@
-import React, { useState } from "react";
+import React, { useState, FormEvent, ChangeEvent } from "react";
 
-const PaymentPage = () => {
-  const [fullName, setFullName] = useState("");
-  const [email, setEmail] = useState("");
-  const [workspace, setWorkspace] = useState("Private Office");
-  const [amount, setAmount] = useState(5000); // amount in NGN
+interface WorkspaceOption {
+  value: string;
+  label: string;
+  price: number;
+}
+
+const PaymentPage: React.FC = () => {
+  const [fullName, setFullName] = useState<string>("");
+  const [email, setEmail] = useState<string>("");
+  const [workspace, setWorkspace] = useState<string>("Private Office");
+  const [amount, setAmount] = useState<number>(5000); // amount in NGN
 
   // Calculate price breakdown
   const basePrice = amount;
   const serviceFee = Math.round(amount * 0.05); // 5% service fee
   const totalAmount = basePrice + serviceFee;
 
-  const handlePayment = (e) => {
+  const handlePayment = (e: FormEvent<HTMLFormElement>): void => {
     e.preventDefault();
 
     // Simulate Paystack
@@ -19,14 +25,14 @@ const PaymentPage = () => {
     // Integration: use Paystack/Flutterwave SDK here.
   };
 
-  const workspaceOptions = [
+  const workspaceOptions: WorkspaceOption[] = [
     { value: "Private Office", label: "Private Office", price: 5000 },
     { value: "Hot Desk", label: "Hot Desk", price: 2500 },
     { value: "Meeting Room", label: "Meeting Room", price: 7500 },
     { value: "Dedicated Desk", label: "Dedicated Desk", price: 4000 },
   ];
 
-  const handleWorkspaceChange = (e) => {
+  const handleWorkspaceChange = (e: ChangeEvent<HTMLSelectElement>): void => {
     const selected = e.target.value;
     setWorkspace(selected);
     

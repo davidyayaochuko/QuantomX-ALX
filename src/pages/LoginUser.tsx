@@ -1,13 +1,13 @@
-import React, { useState } from "react";
+import React, { useState, FormEvent } from "react";
 import { useNavigate, Link } from "react-router-dom";
 
-const SignUpUser = () => {
+const LoginUser: React.FC = () => {
   const navigate = useNavigate();
-  const [showPassword, setShowPassword] = useState(false);
+  const [showPassword, setShowPassword] = useState<boolean>(false);
 
-  const handleSignUp = (e) => {
+  const handleLogin = (e: FormEvent<HTMLFormElement>): void => {
     e.preventDefault();
-    navigate("/book"); // Redirect after signup
+    navigate("/book"); // Redirect after login
   };
 
   return (
@@ -23,21 +23,10 @@ const SignUpUser = () => {
 
         {/* Title */}
         <h2 className="text-2xl font-semibold text-center text-gray-800 mb-6">
-          Create Your Account
+          Welcome Back
         </h2>
 
-        <form onSubmit={handleSignUp}>
-          {/* Full Name */}
-          <label className="block mb-1 text-sm font-medium text-gray-700">
-            Full Name
-          </label>
-          <input
-            type="text"
-            placeholder="John Doe"
-            className="w-full mb-4 px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            required
-          />
-
+        <form onSubmit={handleLogin}>
           {/* Email */}
           <label className="block mb-1 text-sm font-medium text-gray-700">
             Email
@@ -56,7 +45,7 @@ const SignUpUser = () => {
           <div className="relative mb-6">
             <input
               type={showPassword ? "text" : "password"}
-              placeholder="Create a password"
+              placeholder="Enter your password"
               className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
             />
@@ -68,20 +57,20 @@ const SignUpUser = () => {
             </span>
           </div>
 
-          {/* Sign Up Button */}
+          {/* Login Button */}
           <button
             type="submit"
             className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-semibold transition duration-200"
           >
-            Sign Up
+            Log In
           </button>
         </form>
 
         {/* Footer */}
         <div className="mt-6 text-center text-sm text-gray-600">
-          Already have an account?{" "}
-          <Link to="/" className="text-blue-600 font-semibold hover:underline">
-            Log In
+          Don't have an account?{" "}
+          <Link to="/signup" className="text-blue-600 font-semibold hover:underline">
+            Sign Up
           </Link>
           <br />
           <Link to="/admin" className="mt-2 inline-block text-blue-500 hover:underline font-medium">
@@ -93,4 +82,7 @@ const SignUpUser = () => {
   );
 };
 
-export default SignUpUser;
+export default LoginUser;
+
+
+/////

@@ -1,5 +1,5 @@
-// File: src/components/Calendar.js
-import React, { useState, useEffect } from 'react';
+// File: src/components/Calendar.tsx
+import React, { useState, useEffect, ReactElement } from 'react';
 
 const DAYS_OF_WEEK = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MONTHS = [
@@ -9,17 +9,26 @@ const MONTHS = [
 
 const SEATS_STORAGE_KEY = 'bookedSeats';
 
-const Calendar = ({ onDateSelect }) => {
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [selectedDate, setSelectedDate] = useState(new Date());
-  const [bookedDates, setBookedDates] = useState({});
+interface CalendarProps {
+  onDateSelect: (date: Date) => void;
+}
+
+interface BookedDates {
+  [key: string]: number;
+}
+
+const Calendar: React.FC<CalendarProps> = ({ onDateSelect }) => {
+  const [currentDate, setCurrentDate] = useState<Date>(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [bookedDates, setBookedDates] = useState<BookedDates>({});
 
   useEffect(() => {
     // Load booked seats data to highlight dates with bookings
-    const storedBookings = JSON.parse(localStorage.getItem(SEATS_STORAGE_KEY)) || [];
+    const storedBookingsStr = localStorage.getItem(SEATS_STORAGE_KEY);
+    const storedBookings: any[] = storedBookingsStr ? JSON.parse(storedBookingsStr) : [];
     
     // Create a map of dates with bookings
-    const dates = {};
+    const dates: BookedDates = {};
     storedBookings.forEach(booking => {
       // Using a simple format for date keys (YYYY-MM-DD)
       const bookingDate = new Date().toISOString().split('T')[0];
@@ -29,15 +38,15 @@ const Calendar = ({ onDateSelect }) => {
     setBookedDates(dates);
   }, []);
 
-  const getDaysInMonth = (year, month) => {
+  const getDaysInMonth = (year: number, month: number): number => {
     return new Date(year, month + 1, 0).getDate();
   };
 
-  const getFirstDayOfMonth = (year, month) => {
+  const getFirstDayOfMonth = (year: number, month: number): number => {
     return new Date(year, month, 1).getDay();
   };
 
-  const handlePrevMonth = () => {
+  const handlePrevMonth = (): void => {
     setCurrentDate(prev => {
       const newDate = new Date(prev);
       newDate.setMonth(newDate.getMonth() - 1);
@@ -45,7 +54,7 @@ const Calendar = ({ onDateSelect }) => {
     });
   };
 
-  const handleNextMonth = () => {
+  const handleNextMonth = (): void => {
     setCurrentDate(prev => {
       const newDate = new Date(prev);
       newDate.setMonth(newDate.getMonth() + 1);
@@ -53,7 +62,7 @@ const Calendar = ({ onDateSelect }) => {
     });
   };
 
-  const handleDateClick = (day) => {
+  const handleDateClick = (day: number): void => {
     const newDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
     setSelectedDate(newDate);
     if (onDateSelect) {
@@ -62,14 +71,14 @@ const Calendar = ({ onDateSelect }) => {
   };
 
   // Generate calendar grid
-  const renderCalendar = () => {
+  const renderCalendar = (): ReactElement[] => {
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
     
     const daysInMonth = getDaysInMonth(year, month);
     const firstDay = getFirstDayOfMonth(year, month);
     
-    const days = [];
+    const days: ReactElement[] = [];
     
     // Add empty cells for days before the first day of the month
     for (let i = 0; i < firstDay; i++) {

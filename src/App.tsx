@@ -1,7 +1,4 @@
-
-
-
-// File: src/App.js
+// File: src/App.tsx
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
@@ -11,17 +8,17 @@ import LoginUser from './pages/LoginUser';
 import LoginAdmin from './pages/LoginAdmin';
 import SignUpUser from './pages/SignUpUser';
 import PaymentPage from './pages/PaymentPage';
-import QuantumXSplitLandingPage from './pages/SplitLoginPage'; // Import the split landing page
+import QuantumXSplitLandingPage from './pages/SplitLoginPage'; // Split landing page
 
-import './App.css';
+import './App.css'; // keep this as is for global styles
 
-function App() {
+const App: React.FC = () => {
   return (
     <Router>
       <Routes>
         {/* Split Landing Page as the default route */}
         <Route path="/" element={<QuantumXSplitLandingPage />} />
-        
+
         {/* Login Pages */}
         <Route path="/login" element={<LoginUser />} />
         <Route path="/admin/login" element={<LoginAdmin />} />
@@ -32,11 +29,11 @@ function App() {
         <Route path="/history" element={<BookingHistoryPage />} />
         <Route path="/payment" element={<PaymentPage />} />
 
-        {/* Legacy routes for backward compatibility */}
+        {/* Legacy route */}
         <Route path="/admin" element={<LoginAdmin />} />
       </Routes>
     </Router>
   );
-}
+};
 
 export default App;

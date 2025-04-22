@@ -1,10 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, FormEvent } from "react";
 import { Link } from "react-router-dom";
 
-const LoginAdmin = () => {
-  const [showPassword, setShowPassword] = useState(false);
+const LoginAdmin: React.FC = () => {
+  const [showPassword, setShowPassword] = useState<boolean>(false);
 
-  const handleLogin = (e) => {
+  const handleLogin = (e: FormEvent<HTMLFormElement>): void => {
     e.preventDefault();
     // Add your admin login logic here
   };

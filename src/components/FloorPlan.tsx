@@ -1,17 +1,27 @@
-// File: src/components/FloorPlan.js
+// File: src/components/FloorPlan.tsx
 import React, { useState, useEffect } from 'react';
 import SeatModal from './SeatModal';
+
+interface FloorPlanProps {
+  selectedDate: Date;
+  selectedTime: string;
+}
+
+interface Seat {
+  id: number;
+  [key: string]: any; // Allow any additional properties
+}
 
 const SEATS_STORAGE_KEY = 'bookedSeats';
 const PARKING_STORAGE_KEY = 'parkingSpaces';
 const BOOKING_HISTORY_KEY = 'bookingHistory';
 
-const FloorPlan = ({ selectedDate, selectedTime }) => {
-  const [selectedSeat, setSelectedSeat] = useState(null);
-  const [bookedSeats, setBookedSeats] = useState([]);
-  const [parkingTotal] = useState(10);
-  const [parkingBooked, setParkingBooked] = useState(0);
-  const [isMobile, setIsMobile] = useState(false);
+const FloorPlan: React.FC<FloorPlanProps> = ({ selectedDate, selectedTime }) => {
+  const [selectedSeat, setSelectedSeat] = useState<Seat | null>(null);
+  const [bookedSeats, setBookedSeats] = useState<number[]>([]);
+  const [parkingTotal] = useState<number>(10);
+  const [parkingBooked, setParkingBooked] = useState<number>(0);
+  const [isMobile, setIsMobile] = useState<boolean>(false);
   
   // Check if we're on mobile
   useEffect(() => {
@@ -34,22 +44,24 @@ const FloorPlan = ({ selectedDate, selectedTime }) => {
     const dateString = selectedDate ? selectedDate.toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
     
     // Load booked seats from localStorage
-    const storedBookings = JSON.parse(localStorage.getItem(SEATS_STORAGE_KEY)) || [];
+    const storedBookingsStr = localStorage.getItem(SEATS_STORAGE_KEY);
+    const storedBookings = storedBookingsStr ? JSON.parse(storedBookingsStr) : [];
     
     // Filter bookings for the selected date if needed
     const relevantBookings = selectedDate 
-      ? storedBookings.filter(booking => {
+      ? storedBookings.filter((booking: any) => {
           if (!booking.date) return false;
           return new Date(booking.date).toISOString().split('T')[0] === dateString;
         })
       : storedBookings;
     
-    setBookedSeats(relevantBookings.map(b => b.id));
+    setBookedSeats(relevantBookings.map((b: any) => b.id));
     
     // Load parking info
     try {
       // First, try to load as an object with date keys
-      const parkingData = JSON.parse(localStorage.getItem(PARKING_STORAGE_KEY));
+      const parkingDataStr = localStorage.getItem(PARKING_STORAGE_KEY);
+      const parkingData = parkingDataStr ? JSON.parse(parkingDataStr) : null;
       
       if (typeof parkingData === 'object' && parkingData !== null) {
         // It's the new format with date keys
@@ -67,7 +79,13 @@ const FloorPlan = ({ selectedDate, selectedTime }) => {
     }
   }, [selectedDate, selectedTime]);
 
-  const handleBooking = (id, time, includeParking, extraSpace, bookingDate = new Date()) => {
+  const handleBooking = (
+    id: number, 
+    time: string, 
+    includeParking: boolean, 
+    extraSpace: boolean, 
+    bookingDate: Date = new Date()
+  ): void => {
     // Format the date
     const dateString = bookingDate.toISOString();
     const dateKey = dateString.split('T')[0];
@@ -77,7 +95,8 @@ const FloorPlan = ({ selectedDate, selectedTime }) => {
     setBookedSeats(updatedBookedSeats);
     
     // Get existing booked seats
-    const existingBookings = JSON.parse(localStorage.getItem(SEATS_STORAGE_KEY)) || [];
+    const existingBookingsStr = localStorage.getItem(SEATS_STORAGE_KEY);
+    const existingBookings = existingBookingsStr ? JSON.parse(existingBookingsStr) : [];
     
     // Add new booking
     const newBooking = {
@@ -106,22 +125,25 @@ const FloorPlan = ({ selectedDate, selectedTime }) => {
       
       // Update parking storage - need to handle both formats
       try {
-        const parkingData = JSON.parse(localStorage.getItem(PARKING_STORAGE_KEY) || '{}');
+        const parkingDataStr = localStorage.getItem(PARKING_STORAGE_KEY);
+        const parkingData = parkingDataStr ? JSON.parse(parkingDataStr) : {};
         
         // Handle the case where parking data is a number (old format)
         if (typeof parkingData === 'number') {
           // Convert to new format
-          const newParkingData = {};
+          const newParkingData: Record<string, number> = {};
           newParkingData[dateKey] = parkingData + 1;
           localStorage.setItem(PARKING_STORAGE_KEY, JSON.stringify(newParkingData));
         } else {
           // It's already the new format or empty object
-          parkingData[dateKey] = (parkingData[dateKey] || 0) + 1;
-          localStorage.setItem(PARKING_STORAGE_KEY, JSON.stringify(parkingData));
+          if (parkingData) {
+            parkingData[dateKey] = (parkingData[dateKey] || 0) + 1;
+            localStorage.setItem(PARKING_STORAGE_KEY, JSON.stringify(parkingData));
+          }
         }
       } catch (error) {
         // If there's any error, create a new parking data object
-        const newParkingData = {};
+        const newParkingData: Record<string, number> = {};
         newParkingData[dateKey] = 1;
         localStorage.setItem(PARKING_STORAGE_KEY, JSON.stringify(newParkingData));
       }
@@ -139,14 +161,15 @@ const FloorPlan = ({ selectedDate, selectedTime }) => {
       endTime: newBooking.endTime
     };
 
-    const history = JSON.parse(localStorage.getItem(BOOKING_HISTORY_KEY)) || [];
+    const historyStr = localStorage.getItem(BOOKING_HISTORY_KEY);
+    const history = historyStr ? JSON.parse(historyStr) : [];
     history.push(booking);
     localStorage.setItem(BOOKING_HISTORY_KEY, JSON.stringify(history));
 
     setSelectedSeat(null);
   };
 
-  const handleCancelBooking = (seatId) => {
+  const handleCancelBooking = (seatId: number): void => {
     // Get current date string if selectedDate is provided
     const dateKey = selectedDate ? selectedDate.toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
     
@@ -155,10 +178,11 @@ const FloorPlan = ({ selectedDate, selectedTime }) => {
     setBookedSeats(updatedBookedSeats);
     
     // Get existing bookings
-    const existingBookings = JSON.parse(localStorage.getItem(SEATS_STORAGE_KEY)) || [];
+    const existingBookingsStr = localStorage.getItem(SEATS_STORAGE_KEY);
+    const existingBookings = existingBookingsStr ? JSON.parse(existingBookingsStr) : [];
     
     // Find the booking to cancel
-    const bookingToCancel = existingBookings.find(booking => {
+    const bookingToCancel = existingBookings.find((booking: any) => {
       // Match by ID and date if selectedDate is provided
       if (selectedDate && booking.date) {
         const bookingDateKey = new Date(booking.date).toISOString().split('T')[0];
@@ -176,7 +200,8 @@ const FloorPlan = ({ selectedDate, selectedTime }) => {
       
       // Update storage - need to handle both formats
       try {
-        const parkingData = JSON.parse(localStorage.getItem(PARKING_STORAGE_KEY));
+        const parkingDataStr = localStorage.getItem(PARKING_STORAGE_KEY);
+        const parkingData = parkingDataStr ? JSON.parse(parkingDataStr) : null;
         
         if (typeof parkingData === 'number') {
           // It's the old format - just decrement
@@ -194,7 +219,7 @@ const FloorPlan = ({ selectedDate, selectedTime }) => {
         }
       } catch (error) {
         // If there's any error, just set to 0
-        const newParkingData = {};
+        const newParkingData: Record<string, number> = {};
         newParkingData[dateKey] = 0;
         localStorage.setItem(PARKING_STORAGE_KEY, JSON.stringify(newParkingData));
       }
@@ -205,21 +230,22 @@ const FloorPlan = ({ selectedDate, selectedTime }) => {
     if (selectedDate && bookingToCancel && bookingToCancel.date) {
       // If we have dates, filter by ID and date
       const bookingDateKey = new Date(bookingToCancel.date).toISOString().split('T')[0];
-      updatedBookings = existingBookings.filter(booking => {
+      updatedBookings = existingBookings.filter((booking: any) => {
         if (!booking.date) return booking.id !== seatId;
         const bDateKey = new Date(booking.date).toISOString().split('T')[0];
         return !(booking.id === seatId && bDateKey === bookingDateKey);
       });
     } else {
       // Otherwise just filter by ID
-      updatedBookings = existingBookings.filter(booking => booking.id !== seatId);
+      updatedBookings = existingBookings.filter((booking: any) => booking.id !== seatId);
     }
     
     localStorage.setItem(SEATS_STORAGE_KEY, JSON.stringify(updatedBookings));
     
     // Update history
-    const history = JSON.parse(localStorage.getItem(BOOKING_HISTORY_KEY)) || [];
-    const updatedHistory = history.map(booking => {
+    const historyStr = localStorage.getItem(BOOKING_HISTORY_KEY);
+    const history = historyStr ? JSON.parse(historyStr) : [];
+    const updatedHistory = history.map((booking: any) => {
       // Match by seatId and date if available
       if (booking.seatId === seatId) {
         if (selectedDate && booking.date) {
@@ -237,8 +263,13 @@ const FloorPlan = ({ selectedDate, selectedTime }) => {
     localStorage.setItem(BOOKING_HISTORY_KEY, JSON.stringify(updatedHistory));
   };
 
+  interface WorkspaceSeatProps {
+    id: number;
+    className?: string;
+  }
+
   // Helper to create a workspace seat
-  const WorkspaceSeat = ({ id, className = "" }) => {
+  const WorkspaceSeat: React.FC<WorkspaceSeatProps> = ({ id, className = "" }) => {
     const isBooked = bookedSeats.includes(id);
     
     return (
@@ -272,8 +303,13 @@ const FloorPlan = ({ selectedDate, selectedTime }) => {
     );
   };
 
+  interface MeetingPodProps {
+    id: string | number;
+    className?: string;
+  }
+
   // Helper for meeting pods
-  const MeetingPod = ({ id, className = "" }) => {
+  const MeetingPod: React.FC<MeetingPodProps> = ({ id, className = "" }) => {
     return (
       <div 
         className={`rounded-full bg-gray-300 flex items-center justify-center text-gray-600 ${className}`}
@@ -289,7 +325,7 @@ const FloorPlan = ({ selectedDate, selectedTime }) => {
   };
 
   // Format the selected date for display
-  const formatDate = (date) => {
+  const formatDate = (date: Date): string => {
     return date.toLocaleDateString('en-US', {
       weekday: 'long',
       month: 'long',
@@ -298,8 +334,14 @@ const FloorPlan = ({ selectedDate, selectedTime }) => {
     });
   };
 
+  interface MeetingLabelProps {
+    label: string;
+    top: string | number;
+    left: string | number;
+  }
+
   // Create the meeting room labels
-  const MeetingLabel = ({ label, top, left }) => (
+  const MeetingLabel: React.FC<MeetingLabelProps> = ({ label, top, left }) => (
     <div 
       className="absolute text-xs text-center bg-white bg-opacity-70 p-1 rounded"
       style={{ 

@@ -1,7 +1,13 @@
-// src/components/Seat.js
+// src/components/Seat.tsx
 import React from 'react';
 
-const Seat = ({ id, isBooked, onClick }) => {
+interface SeatProps {
+  id: number;
+  isBooked: boolean;
+  onClick: () => void;
+}
+
+const Seat: React.FC<SeatProps> = ({ id, isBooked, onClick }) => {
   return (
     <div
       onClick={onClick}

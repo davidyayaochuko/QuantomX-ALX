@@ -1,7 +1,12 @@
-// File: src/components/ParkingSpace.js
+// File: src/components/ParkingSpace.tsx
 import React from 'react';
 
-const ParkingSpace = ({ total, booked }) => {
+interface ParkingSpaceProps {
+  total: number;
+  booked: number;
+}
+
+const ParkingSpace: React.FC<ParkingSpaceProps> = ({ total, booked }) => {
   const available = total - booked;
   
   // Calculate percentage for progress bar

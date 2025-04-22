@@ -1,10 +1,32 @@
-// File: src/components/UserProfile.js
+// File: src/components/UserProfile.tsx
 import React from 'react';
 import { Link } from 'react-router-dom';
 
-const UserProfile = ({ onClose }) => {
+interface UserProfileProps {
+    onClose: () => void;
+}
+
+interface Booking {
+    id: string;
+    seatId: number;
+    date: string;
+    time: string;
+}
+
+interface User {
+    id: string;
+    name: string;
+    email: string;
+    position: string;
+    department: string;
+    profileImage: string;
+    joinDate: string;
+    recentBookings: Booking[];
+}
+
+const UserProfile: React.FC<UserProfileProps> = ({ onClose }) => {
     // Sample user data - this would come from your auth system/backend
-    const user = {
+    const user: User = {
         id: 'usr123',
         name: 'John Doe',
         email: 'john.doe@example.com',
@@ -19,7 +41,7 @@ const UserProfile = ({ onClose }) => {
         ]
     };
 
-    const formatDate = (dateString) => {
+    const formatDate = (dateString: string): string => {
         const date = new Date(dateString);
         return date.toLocaleDateString('en-US', {
             year: 'numeric',

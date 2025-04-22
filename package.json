@@ -16,14 +16,17 @@
     "axios": "^1.8.4",
     "bootstrap": "^5.3.5",
     "react": "^18.2.0",
+    "react-bootstrap": "^2.10.9",
     "react-dom": "^18.2.0",
     "react-hook-form": "^7.55.0",
+    "react-router-bootstrap": "^0.26.3",
     "react-router-dom": "^6.30.0",
     "zod": "^3.24.3"
   },
   "devDependencies": {
     "@types/react": "^18.0.27",
     "@types/react-dom": "^18.0.10",
+    "@types/react-router-bootstrap": "^0.26.6",
     "@vitejs/plugin-react": "^4.4.0",
     "eslint": "^9.24.0",
     "eslint-config-prettier": "^10.1.2",

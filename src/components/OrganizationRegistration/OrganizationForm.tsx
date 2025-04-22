@@ -1,5 +1,7 @@
 // src/components/OrganizationRegistration/OrganizationForm.tsx
-import { useState, FormEvent } from 'react';
+import React, { useState, FormEvent } from 'react';
+import { Card, Form, Button, Image } from 'react-bootstrap';
+
 
 type OrganizationData = {
   name: string;
@@ -11,63 +13,45 @@ type Props = {
   onSubmit: (data: OrganizationData) => void;
 };
 
-export default function OrganizationForm({ onSubmit }: Props) {
+export default function OrganizationForm({ onSubmit }: { onSubmit: (data: any) => void }) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [logo, setLogo] = useState<File | undefined>(undefined);
+  const [logo, setLogo] = useState<File | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
+
+  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] || null;
+    setLogo(file);
+    setPreview(file ? URL.createObjectURL(file) : null);
+  };
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    if (!name || !email) return;
-
     onSubmit({ name, email, logo });
-    setName('');
-    setEmail('');
-    setLogo(undefined);
+    setName(''); setEmail(''); setLogo(null); setPreview(null);
   };
 
   return (
-    <form onSubmit={handleSubmit} className="container mt-4">
-      <div className="form-group mb-3">
-        <label>Organization Name</label>
-        <input
-          type="text"
-          className="form-control"
-          placeholder="e.g. QuantomX"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          required
-        />
-      </div>
-
-      <div className="form-group mb-3">
-        <label>Organization Email</label>
-        <input
-          type="email"
-          className="form-control"
-          placeholder="e.g. hello@quantomx.com"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
-      </div>
-
-      <div className="form-group mb-3">
-        <label>Upload Logo (optional)</label>
-        <input
-          type="file"
-          className="form-control"
-          accept="image/*"
-          onChange={(e) => {
-            const file = e.target.files?.[0];
-            setLogo(file);
-          }}
-        />
-      </div>
-
-      <button type="submit" className="btn btn-primary">
-        Register Organization
-      </button>
-    </form>
+    <Card className="mx-auto" style={{ maxWidth: 600 }}>
+      <Card.Header>Register Organization</Card.Header>
+      <Card.Body>
+        <Form onSubmit={handleSubmit}>
+          <Form.Group className="mb-3">
+            <Form.Label>Name</Form.Label>
+            <Form.Control value={name} onChange={e => setName(e.target.value)} placeholder="QuantomX" required />
+          </Form.Group>
+          <Form.Group className="mb-3">
+            <Form.Label>Email</Form.Label>
+            <Form.Control type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="hello@quantomx.com" required />
+          </Form.Group>
+          <Form.Group className="mb-3">
+            <Form.Label>Logo</Form.Label>
+            <Form.Control type="file" accept="image/*" onChange={handleFile} />
+            {preview && <Image src={preview} thumbnail className="mt-2" style={{ maxHeight: 100 }} />}
+          </Form.Group>
+          <Button type="submit" variant="primary">Register Organization</Button>
+        </Form>
+      </Card.Body>
+    </Card>
   );
 }

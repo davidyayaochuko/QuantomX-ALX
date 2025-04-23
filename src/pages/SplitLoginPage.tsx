@@ -89,7 +89,7 @@ const QuantumXSplitLandingPage = () => {
         <div className={`relative h-full flex flex-col justify-center px-8 py-16 md:py-0 md:px-12 lg:px-16 transition-all duration-500 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`} style={{ transitionDelay: '150ms' }}>
           <div className="max-w-md mx-auto md:mx-0">
             <div className="inline-block rounded-full bg-white bg-opacity-20 px-5 py-1.5 mb-6 backdrop-blur-sm">
-              <p className="text-sm text-white font-medium">Admin Portal</p>
+              <p className="text-sm text-white font-medium">Management Portal</p>
             </div>
 
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4 text-white">Workspace Management</h2>
@@ -111,7 +111,7 @@ const QuantumXSplitLandingPage = () => {
               className="group relative inline-flex items-center justify-center overflow-hidden rounded-full bg-white p-0.5 text-purple-700 shadow-md transition-all duration-300 hover:bg-gradient-to-r hover:from-purple-500 hover:to-pink-600"
             >
               <span className="relative flex items-center space-x-2 rounded-full bg-white px-6 py-3 sm:px-8 sm:py-3.5 text-base font-semibold transition-all duration-300 group-hover:bg-opacity-0 group-hover:text-white">
-                <span>Admin Login</span>
+                <span>Management Login</span>
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clipRule="evenodd" />
                 </svg>

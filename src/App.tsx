@@ -8,6 +8,7 @@ import LoginUser from './pages/LoginUser';
 import LoginAdmin from './pages/LoginAdmin';
 import SignUpUser from './pages/SignUpUser';
 import PaymentPage from './pages/PaymentPage';
+import SignUpAdmin from './pages/Loginmanagement';
 import QuantumXSplitLandingPage from './pages/SplitLoginPage'; // Split landing page
 
 import './App.css'; // keep this as is for global styles
@@ -31,6 +32,7 @@ const App: React.FC = () => {
 
         {/* Legacy route */}
         <Route path="/admin" element={<LoginAdmin />} />
+        <Route path="/SignUpAdmin" element={<SignUpAdmin />} />
       </Routes>
     </Router>
   );

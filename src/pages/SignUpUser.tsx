@@ -85,7 +85,7 @@ const SignUpUser: React.FC = () => {
           </Link>
           <br />
           <Link to="/admin" className="mt-2 inline-block text-blue-500 hover:underline font-medium">
-            Login as Admin
+            Login as Management
           </Link>
         </div>
       </div>
